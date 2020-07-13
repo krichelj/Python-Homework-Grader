@@ -9,13 +9,14 @@ The checker needs arguments to function:
 1. **(Reqierd)** **path** - Path to the assignments needed to be checked.
 2. **(Reqierd)** **test_file** - Path to test file containing all the tests needed to be tested.
 3. (Optional)  **save_to** - Directory to save the copied assignments to.
-**WARNING**: Whatever in this directory will be DELETED. 
-default = 'tested/' 
-4. (Optional) **workbook** - Directory to save xlsx file with scores and notes. This argument must have '.xlsx' suffix. 
-default = './Assignment Grades.xlsx' 
-5. (Optional) **sheet_title** - Title for the workbook sheet where the scores and notes 
+	- **WARNING**: Whatever in this directory will be DELETED. 
+	- default = 'tested/' 
+4. (Optional) **workbook** - Directory to save xlsx file with scores and notes. 
+	- This argument must have '.xlsx' suffix. 
+	- default = './Assignment Grades.xlsx' 
+6. (Optional) **sheet_title** - Title for the workbook sheet where the scores and notes 
 will be written. 
-default = 'Assignment Students Grades'
+	- default = 'Assignment Students Grades'
 
 ### What does it do?
    1. Clears **save_to** and get it ready to host all the assignments files that will be imported for testing.
