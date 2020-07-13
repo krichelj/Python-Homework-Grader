@@ -24,7 +24,7 @@ default = 'Assignment Students Grades'
    4. Reads the **test_file** and extract data from it.
    5. Runs the tests for each file in **save_to**, and writes the score and notes it got to **workbook**.
 
-# Test File
+## Test File
 The **test_file** must have a specific format, in order for the checker to be able to read it.
 - The tests file name must have '.csv' suffix. 
 - First line in the file is: 
