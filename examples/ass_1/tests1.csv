@@ -1,0 +1,14 @@
+Test|Points|Expected|TestType
+self.module.compute_roots(3, 4, 5)|4|list([r"no roots!"])|LIST_TEST_TYPE
+self.module.compute_roots(4, 0, -16)|4|list([2.0, -2.0])|LIST_TEST_TYPE
+self.module.compute_roots(16, 0, 0)|4|list([0.0, "none"])|LIST_TEST_TYPE
+self.module.compute_roots(16, -3, 0)|4|list([0.1875, 0.0])|LIST_TEST_TYPE
+self.module.isSumDivided(12987)|8|int(54)|NUMBER_TEST_TYPE
+self.module.isSumDivided(20)|8|int(4)|NUMBER_TEST_TYPE
+self.module.triangle(5)|5|"\n1\n22\n333\n4444\n55555\n"|PRING_TEST_TYPE
+self.module.triangle(-9)|5|"        1\n       22\n      333\n     4444\n    55555\n   666666\n  7777777\n 88888888\n999999999"|PRINT_TEST_TYPE
+self.module.triangle(-10)|6|"Wrong value"|PRINT_TEST_TYPE
+self.module.histograph("a1b2c3v2")|16|r"abbcccvv"|STRING_TEST_TYPE
+self.module.separate("DUARTE", "LAKONIA")|9|list(["URE", "lkna"])|LIST_TEST_TYPE
+self.module.separate("duarte", "lakonia")|9|list(["URE", "lkna"])|LIST_TEST_TYPE
+self.module.primeList(9)|18|list([2, 3, 5, 7])|LIST_TEST_TYPE
