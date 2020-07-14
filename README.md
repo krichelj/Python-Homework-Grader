@@ -47,8 +47,11 @@ The **test_file** must have a specific format, in order for the checker to be ab
 - File must not have any other lines that are not tests of the form mentioned above. Empty lines are forbidden. 
 - Examples: 
 > `x = -1;self.module.compute_roots(x)|7|ValueError()|EXCEPTION_TEST_TYPE`
+
 > `home = self.module.Location(2.5, 3.0);str(home)|5|"2.5_3.0"|STRING_TEST_TYPE`
+
 > `self.module.isSumDivided(12987)|8|int(54)|NUMBER_TEST_TYPE`
+
 > `self.module.triangle(-10)|6|"Wrong value"|PRINT_TEST_TYPE`
 
 ### Implemented Tests Types:
