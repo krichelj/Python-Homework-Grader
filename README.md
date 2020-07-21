@@ -1,13 +1,13 @@
 #  Python Homework Grader
 
 A python tool dedicated to test python codes according to some test file.
-This tool automatically checks a bunch of python assignments, grade them and outputs a xlsx file with grades and notes.
+This tool automatically checks a bunch of python assignments, grades them and outputs an xlsx file with grades and notes.
 
-## How it works?
+## How does it work?
 ### Arguments:
 The checker needs arguments to function:
-1. **(Reqierd)** **path** - Path to the assignments needed to be checked.
-2. **(Reqierd)** **test_file** - Path to test file containing all the tests needed to be tested.
+1. **(Required)** **path** - Path to the assignments needed to be checked.
+2. **(Required)** **test_file** - Path to test file containing all the tests needed to be tested.
 3. (Optional)  **save_to** - Directory to save the copied assignments to.
 	- **WARNING**: Whatever in this directory will be DELETED. 
 	- default = 'tested/' 
@@ -20,7 +20,7 @@ will be written.
 
 ### What does it do?
    1. Clears **save_to** and get it ready to host all the assignments files that will be imported for testing.
-   2.  Clears code of assignments files from **path** and save it to **save_to**.
+   2. Clears code of assignments files from **path** and save it to **save_to**.
    3. Creates **workbook** with a sheet named **sheet_title** to write scores and notes to it.
    4. Reads the **test_file** and extract data from it.
    5. Runs the tests for each file in **save_to**, and writes the score and notes it got to **workbook**.
@@ -33,8 +33,8 @@ The **test_file** must have a specific format, in order for the checker to be ab
 	* (overall the first line is ignored).
 - Every other line should be a different test with arguments separated with `|`: 
     - **TestPhrase** - A bunch of commands separated with `;`. 
-	    - Calling an object form the file to test should have the prefix `self.module.`
-    - **Points** - How many points the test worth. 
+	    - Calling an object from the file to test should have the prefix `self.module.`
+    - **Points** - How many points is the test worth. 
 	    - Must be integer or float. 
     - **ExpectedValue** - The value expected to return from the test. 
     - **TestType** - Usually the type of the expected output. 
@@ -71,7 +71,7 @@ If you are not using a test type from the list, the comparison between the expec
 If you want to add your own test type, it should be added to the `tests_classes.py` file.
 Each unique test is a python class inheriting from the class `Test` implemented in that file. 
 
-# How to use?
+# How to use it?
 1. Clone this repository.
 2. Run setup from the repository root directory.
 3. From the repository directory run:
