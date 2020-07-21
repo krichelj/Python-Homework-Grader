@@ -73,7 +73,7 @@ Each unique test is a python class inheriting from the class `Test` implemented 
 
 # How to use it?
 1. Clone this repository.
-2. Run setup from the repository root directory.
+2. Run setup from the repository root directory. run: `python setup.py install`
 3. From the repository directory run:
 `python checker.py test [path/to/assignments/] [path/to/test_file.csv]`
 
