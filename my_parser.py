@@ -110,21 +110,30 @@ will be written.
 
 INSTRUCTIONS = """Instructions how to write the tests csv document:
 -------------------------------------------------
-The tests file must have '.csv' suffix. 
-File should have the following format: 
-First line is: 'TestPhrase|Points|ExpectedValue|TestType' (overall the fist line is ignored).
-Every other line should be a different test with arguments separated with '|': 
-    Test Phrase = A bunch of commands separated with ';'. 
-                  Calling an object form the file to test should have the prefix 'self.module.'
-    Points = How many points the test worth. should be integer or float. 
-    Expected value = The value expected to return from the test. 
-    Test type = Usually the type of the expected output. 
-                For instance: 'STRING_TEST_TYPE', 'PRINT_TEST_TYPE', 'LIST_TEST_TYPE'...
-                Try '-t' for a list of test types.
-                Hint: if you are not using a test type from the list, 
-                      the comparison between the expected value and the actual returned value will be '=='.
-File must not have any other lines that are not tests of the form mentioned above. Empty lines are forbidden. 
-Example: 'x = -1;self.module.compute_roots(x)|7|ValueError()|EXCEPTION_TEST_TYPE'
+The **test_file** must have a specific format, in order for the checker to be able to read it.
+- The tests file name must have '.csv' suffix. 
+- First line in the file is: 
+	`'TestPhrase|Points|ExpectedValue|TestType'`
+	* (overall the first line is ignored).
+- Every other line should be a different test with arguments separated with `|`: 
+    - **TestPhrase** - A bunch of commands separated with `;`. 
+	    - Calling an object from the file to test should have the prefix `self.module.`
+    - **Points** - How many points is the test worth. 
+	    - Must be integer or float. 
+    - **ExpectedValue** - The value expected to return from the test. 
+    - **TestType** - Usually the type of the expected output. 
+	     - For instance: 
+	     `STRING_TEST_TYPE`
+	     `PRINT_TEST_TYPE`
+	     `LIST_TEST_TYPE`
+	     - Try ' -t' for a list of test types.
+	     - Hint: if you are not using a test type from the list, the comparison between the expected value and the actual returned value will be `==`.
+- File can only have lines that are tests of the form mentioned above. Empty lines are forbidden. 
+- Examples: 
+> `x = -1;self.module.compute_roots(x)|7|ValueError()|EXCEPTION_TEST_TYPE`
+> `home = self.module.Location(2.5, 3.0);str(home)|5|"2.5_3.0"|STRING_TEST_TYPE`
+> `self.module.isSumDivided(12987)|8|int(54)|NUMBER_TEST_TYPE`
+> `self.module.triangle(-10)|6|"Wrong value"|PRINT_TEST_TYPE`
 """
 
 TEST_TYPES_INSTRUCTIONS = """Available test types: \n""" +\
