@@ -1,4 +1,4 @@
-#  Checker
+#  Python Homework Grader
 
 A python tool dedicated to test python codes according to some test file.
 This tool automatically checks a bunch of python assignments, grade them and outputs a xlsx file with grades and notes.
