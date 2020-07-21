@@ -44,7 +44,7 @@ The **test_file** must have a specific format, in order for the checker to be ab
 	     `LIST_TEST_TYPE`
 	     - Try ' -t' for a list of test types.
 	     - Hint: if you are not using a test type from the list, the comparison between the expected value and the actual returned value will be `==`.
-- File must not have any other lines that are not tests of the form mentioned above. Empty lines are forbidden. 
+- File can only have lines that are tests of the form mentioned above. Empty lines are forbidden. 
 - Examples: 
 > `x = -1;self.module.compute_roots(x)|7|ValueError()|EXCEPTION_TEST_TYPE`
 
