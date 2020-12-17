@@ -118,11 +118,12 @@ def read_tests(test_path):
     tests_file = open(test_path, "r")
     tests, points, expected, test_types = [], [], [], []
     for line in tests_file.readlines()[1:]:
-        params = line.strip("\n").split("|")
-        tests.append(params[0])
-        points.append(params[1])
-        expected.append(params[2])
-        test_types.append(params[3])
+        if len(line) > 1:
+            params = line.strip("\n").split("|")
+            tests.append(params[0])
+            points.append(params[1])
+            expected.append(params[2])
+            test_types.append(params[3])
 
     return tests, points, expected, test_types
 
@@ -185,7 +186,7 @@ def write_score_notes_to_file(score, notes, j, group_id, workbook_path):
             if t == 0:
                 notes_str = notes[t]
             else:
-                notes_str = notes_str + '\\n' + notes[t]
+                notes_str = notes_str + '\n' + notes[t]
     ws.cell(j, 3).value = notes_str
 
     # saves and closes the workbook

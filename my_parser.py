@@ -68,14 +68,14 @@ def check_tests_file_path(path_to_tests):
     tests_file = open(path_to_tests)
     for j, line in enumerate(tests_file):
         # first line is ignored
-        if j == 0:
+        if j == 0 or len(line) == 1:
             continue
 
-        # checking if there are empty lines
-        if line == '' or line == '\n':
-            return False, "Test file is not legal: line " + str(j) + \
-                          " is empty. File cannot have empty lines. " + \
-                          "Use '-i' for instructions"
+        # # checking if there are empty lines
+        # if line == '' or line == '\n':
+        #     return False, "Test file is not legal: line " + str(j) + \
+        #                   " is empty. File cannot have empty lines. " + \
+        #                   "Use '-i' for instructions"
 
         # checking each line has exactly four parts divided by '|'
         if line.count('|') != 3:
