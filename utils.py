@@ -128,11 +128,10 @@ def read_tests(test_path):
     return tests, points, expected, test_types
 
 
-def run_tests(module_name, tests, points, expected, test_types):
+def run_tests(assignment_num, module_name, tests, points, expected, test_types, testing_stuck):
     """Testing function.
     For each test in tests it creates an instance of Test class, that fits the test type.
     It runs each test, saves the notes and sums the score"""
-
     score = 0
     notes = []
     for i in range(len(tests)):
@@ -145,10 +144,12 @@ def run_tests(module_name, tests, points, expected, test_types):
         if current_test_type in tests_classes.TEST_TYPES_DICT:
             # if the test type has dedicated class to it, make a new instance of it
             test_class = tests_classes.TEST_TYPES_DICT[current_test_type]
-            test = test_class(current_test, current_points, current_expected, module_name)
+            test = test_class(assignment_num, current_test, current_points, current_expected, module_name,
+                              testing_stuck)
         else:
             # else, make a regular Test class instance
-            test = tests_classes.Test(current_test, current_points, current_expected, module_name)
+            test = tests_classes.Test(assignment_num, current_test, current_points, current_expected, module_name,
+                                      testing_stuck)
 
         # runs the test and saves the results
         current_score, current_note = test.compile_run_and_compare()
@@ -193,15 +194,16 @@ def write_score_notes_to_file(score, notes, j, group_id, workbook_path):
     wb.save(workbook_path)
 
 
-def run_write(out_path, workbook_path, tests, points, expected, test_types, flag_print=False):
+def run_write(assignment_num, out_path, workbook_path, tests, points, expected, test_types, testing_stuck,
+              flag_print=False):
     """Runs tests on each assignment and write its' score and notes to workbook"""
-
     for j, file_name in enumerate(natural_sort(os.listdir(out_path))):
         if file_name[-3:] != '.py' or '__init__' in file_name:
             continue
 
         module_name_to_import = out_path.replace('/', '.') + file_name[:-3]
-        score, notes = run_tests(module_name_to_import, tests, points, expected, test_types)
+        score, notes = run_tests(assignment_num, module_name_to_import, tests, points, expected, test_types,
+                                 testing_stuck)
 
         group_id = file_name[:file_name.find('A')]
         write_score_notes_to_file(score, notes, j+2, group_id, workbook_path)

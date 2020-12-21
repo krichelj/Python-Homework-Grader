@@ -1,8 +1,9 @@
 import utils
 import my_parser
+import re
 
 
-def read_copy_run(path, out_path, workbook_path, sheet_name, test_path):
+def read_copy_run(assignment_num, path, out_path, workbook_path, sheet_name, test_path, testing_stuck):
     """Calls other functions to:
     (1) Clear out_path and get it ready to host all the assignments files that will be imported for testing.
     (2) Clear code of assignments files from path and save it to out_path.
@@ -14,7 +15,8 @@ def read_copy_run(path, out_path, workbook_path, sheet_name, test_path):
     utils.copy_assignments(path, out_path)
     utils.create_workbook(workbook_path, sheet_name)
     tests, points, expected, test_types = utils.read_tests(test_path)
-    utils.run_write(out_path, workbook_path, tests, points, expected, test_types, flag_print=True)
+    utils.run_write(assignment_num, out_path, workbook_path, tests, points, expected, test_types, testing_stuck,
+                    flag_print=True)
 
 
 if __name__ == "__main__":
@@ -48,6 +50,9 @@ if __name__ == "__main__":
         path_to_save_copied_assignments = args.save_to
         workbook_path = args.workbook
         sheet_title = args.sheet_title
+        assignment_num = int(re.sub('[^0-9]', '', assignments_path))
+        testing_stuck = 'stuck' in workbook_path
 
         # run the program
-        read_copy_run(assignments_path, path_to_save_copied_assignments, workbook_path, sheet_title, tests_path)
+        read_copy_run(assignment_num, assignments_path, path_to_save_copied_assignments, workbook_path, sheet_title,
+                      tests_path, testing_stuck)
