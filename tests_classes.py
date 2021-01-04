@@ -60,7 +60,7 @@ class ListStream:
         pass
 
 
-def compare_strings(out_str, expected_str, difference_num=10):
+def compare_strings(out_str, expected_str, difference_num=5):
     """checks if two strings are somewhat similar"""
 
     if out_str == expected_str:
@@ -79,7 +79,7 @@ def compare_strings(out_str, expected_str, difference_num=10):
 
 
 class Test:
-    def __init__(self, assignment_num: int, test_phrase: str, points, expected, module_name, testing_stuck,
+    def __init__(self, assignment_num: int, test_phrase: str, points, expected, module_name, testing_stuck=False,
                  is_backup=False):
         self.assignment_num = assignment_num
         self.test_phrase = test_phrase.split(';')
@@ -127,11 +127,11 @@ class Test:
                 self.actual = e
                 break
 
-        # # try to cast actual type to expected
-        # try:
-        #     self.actual = type(self.expected)(self.actual)
-        # except (TypeError, ValueError) as e:
-        #     pass  # types not compatible
+        # try to cast actual type to expected
+        try:
+            self.actual = type(self.expected)(self.actual)
+        except (TypeError, ValueError) as e:
+            pass  # types not compatible
 
         # let printing occur again
         del actual_print
@@ -190,6 +190,7 @@ class Test:
                 if self.assignment_num == 3 and 'permutation' not in self.test_phrase[0]:
                     def f():
                         return eval(self.test_phrase[0])
+
                     is_recursive = test_recursion(f)
                     uses_loops = uses_loop(f)
 
@@ -265,7 +266,10 @@ class TestPrint(Test):
                     exec(self.test_phrase[i])
                 else:
                     eval(self.test_phrase[i])
-                self.actual = self.actual.data[:-1]
+                if len(self.actual.data) > 1:
+                    self.actual = self.actual.data[:-1]
+                else:
+                    self.actual = self.actual.data
 
             # handling exceptions
             except (ValueError, TypeError, Exception, TimeoutError) as e:
@@ -282,7 +286,13 @@ class TestPrint(Test):
         actual = self.actual
         expected = self.expected
 
-        if 'magic' in self.test_phrase[0]:
+        if 'triangle' in self.test_phrase[0]:
+            actual = self.actual.replace(' ', '').replace('\n', '')
+            expected = self.expected.replace(' ', '').replace('\n', '')
+
+            if compare_strings(actual, expected) or actual in expected:
+                success = True
+        elif 'magic' in self.test_phrase[0]:
             actual = re.sub('[^0-9]', '', self.actual)
             expected = re.sub('[^0-9]', '', self.expected)
 
@@ -318,8 +328,6 @@ class TestPrint(Test):
                              + str(actual_permutations) + '.'
 
             self.score = self.points
-
-
         else:
             if compare_strings(actual, expected):
                 success = True
@@ -367,8 +375,51 @@ class TestList(Test):
 
     def check_value(self):
         """Checks if self.actual and self.expected store the same elements, without respect to order."""
-        if len(self.actual) == len(self.expected) and collections.Counter(self.actual) != collections.Counter(
-                self.expected):
+
+        def convert_numeric(tup):
+            return (float(i) if i.lstrip('-').replace('.', '', 1).isdigit() else i for i in tup if isinstance(i, str))
+
+        def evaluate(z):
+            z_type = type(z)
+            output = z_type()
+
+            for x in z:
+                y = x
+
+                if isinstance(y, str):
+                    try:
+                        y = eval(y.lstrip('0'))
+                    except (SyntaxError, NameError):
+                        pass
+
+                output += z_type([y])
+
+            return output
+
+        def is_list_not_valid(actual, expected):
+            actual = evaluate(actual)
+            expected = evaluate(expected)
+
+            if any([isinstance(x, list) for x in actual]):
+                return any([is_list_not_valid(a, e) for a, e in zip(actual, expected)])
+            if any([isinstance(x, tuple) for x in actual]):
+                return actual.count(None) != expected.count(None) or \
+                       any([is_list_not_valid(a, e) for a, e in
+                            zip(convert_numeric(actual), convert_numeric(expected))])
+            # if any([isinstance(x, tuple) for x in actual]):
+            #     return is_list_not_valid \
+            #         ([(float(i) if i.lstrip('-').replace('.', '', 1).isdigit() else i for i in x)
+            #           if x else x for x in actual], expected)
+            try:
+                res = len(actual) == len(expected) and collections.Counter(actual) != collections.Counter(expected)
+            except:
+                res = False
+            return res
+
+        if 'compute_roots' in self.test_phrase[0]:
+            self.actual = list(map(lambda x: x.replace('!', '').lower() if isinstance(x, str) else x, self.actual))
+
+        if is_list_not_valid(self.actual, self.expected):
             self.note = 'On test: ' + str(self.test_phrase) + \
                         ' the list/tuple/dictionary returned is not as expected. ' + \
                         'Should have returned: ' + str(self.expected) + \
@@ -397,13 +448,26 @@ class TestNumberOrBoolean(Test):
 
 
 class TestException(Test):
+    def run_test(self):
+        try:
+            exec(self.test_phrase[0])
+        except Exception as e:
+            self.actual = (type(e), e.args[0])
+
     def compare(self):
         """Compares if self.actual and self.expected are the same type of exception"""
-
-        if not isinstance(self.actual, type(self.expected)):
+        if not self.actual or self.actual[0] != self.expected[0]:
             self.note = 'On test: ' + str(self.test_phrase) + \
                         ' the exception returned is not correct. Should have returned exception of type ' + \
-                        str(type(self.expected)) + '. Instead the exception got was: ' + str(self.actual)
+                        str(self.expected[0]) + '. Instead returned an output of type: ' + \
+                        (str(self.actual[0]) if self.actual else 'None') + ' (-' + str(self.points) + ')'
+        elif (self.expected[0] == type(TypeError) and
+              not (compare_strings(self.actual[1], self.expected[1]) or compare_strings(self.actual[1], 'type input invalid')))\
+        or (self.expected[0] == type(TypeError) and not compare_strings(self.actual[1], self.expected[1])):
+            self.note = "On test: " + str(self.test_phrase) + \
+                        " the exception message is not correct. Should have returned the following message: '" + \
+                        str(self.expected[1]) + "'. Instead returned: '" + str(self.actual[1]) + "'"
+            self.score = int(self.points / 2)
         else:
             self.score = self.points
         return self.score, self.note
@@ -418,7 +482,7 @@ class TestString(Test):
         else:
             self.note = 'On test: ' + str(self.test_phrase) + \
                         ' the string returned is not as expected. Should have returned "' + str(self.expected) + \
-                        '". Instead returned: "' + str(self.actual) + '"'
+                        '". Instead returned: "' + str(self.actual) + ' (-' + str(self.points) + ')'
 
 
 class TestUpperFile(Test):
@@ -426,33 +490,60 @@ class TestUpperFile(Test):
     The test checks if there is a file named with id in output directory.
     It also checks if the content of the file is a string the same as self.expected.
     Eventually the test deletes the file that was created during the test."""
-
-    def __init__(self, assignment_num, test_phrase, points, expected, module_name):
+    bonuses = []
+    def __init__(self, assignment_num, test_phrase, points, expected, module_name, testing_stuck):
         """In addition to the regular Test init, also initializes the path_to_file field"""
 
-        super(TestUpperFile, self).__init__(assignment_num, test_phrase, points, expected, module_name)
+        super(TestUpperFile, self).__init__(assignment_num, test_phrase, points, expected, module_name, testing_stuck)
         self.path_to_file = None
+        self.curr_id = None
+        files = self.expected
+
+        with open(files[0], 'r') as sol_file:
+            self.expected = [TestUpperFile.clear_lines(sol_file)]
+        with open(files[1], 'r') as reduced_sol_file:
+            self.expected += [TestUpperFile.clear_lines(reduced_sol_file)]
+
+
+    @staticmethod
+    def clear_lines(file):
+        lines_to_print = [x for x in file.read().splitlines() if len(x) and 'All routes:' not in x
+                          and 'Routes matching request:' not in x]
+        lines_to_test = [x.lower().replace(' ', '').replace('\n', '') for x in lines_to_print]
+
+        return lines_to_test, lines_to_print
 
     def set_path_to_file(self):
         """Sets the path to the file that should be created during test.
         If directory does not exists, creates it."""
 
-        id_num = str(re.search("[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]", self.module.FILE_NAME).group(0))
-        self.path_to_file = 'output/upper_file_' + str(id_num) + '.txt'
-        if not os.path.exists('output'):
-            os.mkdir('output')
+        id_num_search = re.search("[0-9]{9}", self.module.FILE_NAME)
+        self.curr_id = id_num_search.group(0) if id_num_search else 'sol'
+
+        self.path_to_file = 'itinerary_' + str(self.curr_id) + '_' + (
+            '1' if 'flights1' in self.test_phrase[0] else '2') + '.txt'
 
     def run_test(self):
-        """Before runing the test, sets the path to file"""
+        """Before running the test, sets the path to file"""
 
         self.set_path_to_file()
         super(TestUpperFile, self).run_test()
+
+        # for file in glob.glob('itinerary*'):
+        #     print(file)
+        if os.path.exists('itinerary.txt') and not os.path.exists(self.path_to_file):
+            try:
+                os.rename('itinerary.txt', self.path_to_file)
+            except PermissionError:
+                self.path_to_file = 'itinerary.txt'
+        elif os.path.exists('itinerary') and not os.path.exists(self.path_to_file):
+            os.rename('itinerary', self.path_to_file)
 
     def compare(self):
         if isinstance(self.actual, Exception):
             self.note = 'On test: ' + str(self.test_phrase) + \
                         ' an error accrued while trying to call the test. ' + \
-                        'The exception got was: ' + str(self.actual)
+                        'The exception got was: ' + str(self.actual) + ' (-' + str(self.points) + ')\n'
 
         elif not os.path.exists(self.path_to_file):
             self.note = 'On test: ' + str(self.test_phrase) + \
@@ -460,19 +551,45 @@ class TestUpperFile(Test):
                         'but file does not exists'
 
         else:
-            file_to_check = open(self.path_to_file, 'r')
-            line = file_to_check.read().splitlines()[0]
-            if not compare_strings(line, self.expected, 2):
-                self.note = 'On test ' + str(self.test_phrase) + \
-                            ': the string in the file is not correct. ' + \
-                            'The string should have been: "' + str(self.expected) + \
-                            '". Instead wrote: "' + str(line) + '"'
-                file_to_check.close()
+            with open(self.path_to_file, 'r') as file_to_check:
+                self.actual = TestUpperFile.clear_lines(file_to_check)
 
-            else:
-                self.score = self.points
-        if os.path.exists(self.path_to_file):
-            os.remove(self.path_to_file)
+            results = {}
+
+            for i, case in enumerate(self.expected):
+                matching_lines_num = 0
+                lines_to_test, lines_to_print = case
+
+                total_lines_num = len(lines_to_test)
+
+                note = ''
+                for line_to_test, line_to_print in zip(lines_to_test, lines_to_print):
+
+                    if not any([compare_strings(line_to_test, expected_line) for expected_line in self.actual[0]]):
+                        note += 'On test ' + str(self.test_phrase) + \
+                                     ": the expected line '" + line_to_print + "' was not found in the output file\n"
+                    else:
+                        matching_lines_num += 1
+
+                results[round(self.points * matching_lines_num / total_lines_num, 1)] = (i, note)
+
+            self.score = max(results.keys())
+            i, note = results[self.score]
+
+            reduction = round(self.points - self.score, 1)
+            self.note = note + '\n(-' + str(reduction) + ')\n\n' if reduction > 0 else '\n\n'
+
+            if i == 0 and self.curr_id not in TestUpperFile.bonuses:
+                TestUpperFile.bonuses.append(self.curr_id)
+                self.score += 10
+                self.note += '###### MAD RESPECT FOR DOING THE BONUS! (+10) #######\n'
+
+
+
+
+        # if os.path.exists(self.path_to_file):
+        #     os.remove(self.path_to_file)
+
         return self.score, self.note
 
 
@@ -487,9 +604,6 @@ class TestNumpy(Test):
                         '. Instead got: ' + str(self.actual)
         else:
             self.score = self.points
-
-
-
 
 
 TEST_TYPES_DICT = {'PRINT_TEST_TYPE': TestPrint,

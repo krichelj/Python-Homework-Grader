@@ -39,9 +39,9 @@ def clean_out_path(out_path):
 def write_clean_code(input_file, out_file):
     """Copy original input_file, clean code outside blocks, and write it to out_file.
     Both files should be open."""
-
     middle_of_block = False
-    for line in input_file:
+    for i, line in enumerate(input_file):
+        # print(i)
         line = line.replace('\t', '    ')
         if line == '' or line == '\n':
             continue
@@ -134,6 +134,7 @@ def run_tests(assignment_num, module_name, tests, points, expected, test_types, 
     It runs each test, saves the notes and sums the score"""
     score = 0
     notes = []
+
     for i in range(len(tests)):
         current_test = tests[i]
         current_points = points[i]
@@ -155,7 +156,7 @@ def run_tests(assignment_num, module_name, tests, points, expected, test_types, 
         current_score, current_note = test.compile_run_and_compare()
 
         # sums the score
-        score = score + current_score
+        score += current_score
 
         # Adds notes from the last test to notes list.
         # Also removes unfamiliar calls in the notes to make it more accessible to students reading the notes
@@ -164,6 +165,7 @@ def run_tests(assignment_num, module_name, tests, points, expected, test_types, 
 
     # Removes duplicates in notes, for instance compilation error.
     notes = list(dict.fromkeys(notes))
+
     return score, notes
 
 
@@ -202,9 +204,13 @@ def run_write(assignment_num, out_path, workbook_path, tests, points, expected, 
             continue
 
         module_name_to_import = out_path.replace('/', '.') + file_name[:-3]
+
+        if assignment_num == 4:
+            os.chdir(r'assignments/4/')
         score, notes = run_tests(assignment_num, module_name_to_import, tests, points, expected, test_types,
                                  testing_stuck)
 
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
         group_id = file_name[:file_name.find('A')]
         write_score_notes_to_file(score, notes, j+2, group_id, workbook_path)
 
