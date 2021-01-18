@@ -46,7 +46,7 @@ def check_line_legal(line, j):
                       "Use '-i' for instructions"
 
     # warning if a test phrase has no effect.
-    if 'self.module.' not in test:
+    if 'self.module.' not in test and 'TestClass.' not in test:
         warning = "WARNING: in test file, in line " + str(j) + " there is no 'self.module.' call. " +\
                   "This line will not test anything. \n"
 
@@ -65,11 +65,14 @@ def check_tests_file_path(path_to_tests):
 
     # checking the content of the file
     legality, message = True, ""
-    tests_file = open(path_to_tests)
-    for j, line in enumerate(tests_file):
+    tests_file = open(path_to_tests).readlines()
+
+    for i in range(len(tests_file)):
+        line = tests_file[i]
         # first line is ignored
-        if j == 0 or len(line) == 1:
+        if i == 0 or len(line) < 2 or line[0] == '#':
             continue
+
 
         # # checking if there are empty lines
         # if line == '' or line == '\n':
@@ -79,14 +82,15 @@ def check_tests_file_path(path_to_tests):
 
         # checking each line has exactly four parts divided by '|'
         if line.count('|') != 3:
-            return False, "Test file is not legal: in line " + str(j) + \
+            return False, "Test file is not legal: in line " + str(i) + \
                           " there should be exactly three '|' symbols. " + \
                           "Use '-i' for instructions"
 
         # checking if the parameters given are legal
-        legality, message = check_line_legal(line, j)
+        legality, message = check_line_legal(line, i)
         if not legality:
             return legality, message
+
     return legality, message
 
 

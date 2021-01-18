@@ -117,9 +117,13 @@ def read_tests(test_path):
 
     tests_file = open(test_path, "r")
     tests, points, expected, test_types = [], [], [], []
-    for line in tests_file.readlines()[1:]:
-        if len(line) > 1:
-            params = line.strip("\n").split("|")
+    lines = tests_file.readlines()[1:]
+
+    for i in range(len(lines)):
+        line = lines[i]
+
+        if len(line) > 1 and line[0] != '#':
+            params = line.replace("\n", '').split("|")
             tests.append(params[0])
             points.append(params[1])
             expected.append(params[2])
@@ -133,6 +137,7 @@ def run_tests(assignment_num, module_name, tests, points, expected, test_types, 
     For each test in tests it creates an instance of Test class, that fits the test type.
     It runs each test, saves the notes and sums the score"""
     score = 0
+    available_points = 0
     notes = []
 
     for i in range(len(tests)):
@@ -153,10 +158,11 @@ def run_tests(assignment_num, module_name, tests, points, expected, test_types, 
                                       testing_stuck)
 
         # runs the test and saves the results
-        current_score, current_note = test.compile_run_and_compare()
+        current_score, current_note, current_points = test.compile_run_and_compare()
 
         # sums the score
         score += current_score
+        available_points += current_points
 
         # Adds notes from the last test to notes list.
         # Also removes unfamiliar calls in the notes to make it more accessible to students reading the notes
@@ -166,7 +172,7 @@ def run_tests(assignment_num, module_name, tests, points, expected, test_types, 
     # Removes duplicates in notes, for instance compilation error.
     notes = list(dict.fromkeys(notes))
 
-    return score, notes
+    return score, notes, available_points
 
 
 def write_score_notes_to_file(score, notes, j, group_id, workbook_path):
@@ -207,8 +213,8 @@ def run_write(assignment_num, out_path, workbook_path, tests, points, expected, 
 
         if assignment_num == 4:
             os.chdir(r'assignments/4/')
-        score, notes = run_tests(assignment_num, module_name_to_import, tests, points, expected, test_types,
-                                 testing_stuck)
+        score, notes, available_points = run_tests(assignment_num, module_name_to_import, tests, points, expected,
+                                                   test_types, testing_stuck)
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         group_id = file_name[:file_name.find('A')]
@@ -217,6 +223,6 @@ def run_write(assignment_num, out_path, workbook_path, tests, points, expected, 
         # print the file_name, its' score and notes
         if flag_print:
             print(file_name)
-            print(score)
+            print(str(score) + '/' + str(available_points))
             for note in notes:
                 print(note)

@@ -8,43 +8,12 @@ import numpy as np
 import time
 from typing import Union
 import itertools
-from threading import Thread
-import functools
 
 from RecursionDetector import test_recursion
 from LoopDetector import uses_loop
+from Timeout import timeout
 
 WRONG_CLASS_DEDUCTION = 0.5
-
-
-def timeout(seconds_before_timeout):
-    def deco(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            res = [Exception('function [%s] timeout [%s seconds] exceeded!' % (func.__name__, seconds_before_timeout))]
-
-            def newFunc():
-                try:
-                    res[0] = func(*args, **kwargs)
-                except Exception as e:
-                    res[0] = e
-
-            t = Thread(target=newFunc)
-            t.daemon = True
-            try:
-                t.start()
-                t.join(seconds_before_timeout)
-            except Exception as e:
-                print('error starting thread')
-                raise e
-            ret = res[0]
-            if isinstance(ret, BaseException):
-                raise ret
-            return ret
-
-        return wrapper
-
-    return deco
 
 
 class ListStream:
@@ -84,7 +53,7 @@ class Test:
         self.assignment_num = assignment_num
         self.test_phrase = test_phrase.split(';')
         self.points = float(points)
-        self.expected = eval(expected) if not is_backup else expected
+        self.expected = eval(expected) if not (is_backup or isinstance(self, (TestClass, TestMethod))) else expected
         self.time_to_compute_actual = 0
         self.actual = None
         self.score = 0.0
@@ -176,7 +145,7 @@ class Test:
         if isinstance(self.actual, Exception) and not isinstance(self.expected, Exception):
             if 'string_updateEO' in self.test_phrase[0]:
                 self.test_phrase[0] = self.test_phrase[0].replace('string_updateEO', 'string_updaeEO')
-                self.score, self.note = self.compile_run_and_compare()
+                self.score, self.note, self.points = self.compile_run_and_compare()
             else:
                 self.note = 'On test: ' + str(self.test_phrase) + \
                             ' an error accrued while trying to call the test. ' + \
@@ -221,21 +190,21 @@ class Test:
 
     def compile_run_and_compare(self):
         if not self.compile():
-            return self.score, self.note
+            return self.score, self.note, self.points
 
         if not self.testing_stuck:
             self.run_test()
         else:
-            time_out = 0.1
+            time_out = 1
             func = timeout(seconds_before_timeout=time_out)(self.run_test)
             try:
                 func()
             except:
                 self.note = 'The test ' + str(self.test_phrase[0]) + ' failed due to a time out of ' + str(time_out) + \
                             ' seconds (-' + str(self.points) + ')'
-                return self.score, self.note
-
-        return self.compare()
+                return self.score, self.note, self.points
+        score, note = self.compare()
+        return score, note, self.points
 
     def handle_wrong_value(self):
         pass
@@ -249,6 +218,9 @@ class Test:
     def __str__(self):
         return 'Ex: ' + str(self.assignment_num) + ', test: ' + str(self.test_phrase) + \
                ', backup: ' + str(self.is_backup)
+
+    def check_for_char_occ(self, c: chr):
+        return self.actual.count(c) == self.expected.count(c)
 
 
 class TestPrint(Test):
@@ -292,6 +264,23 @@ class TestPrint(Test):
 
             if compare_strings(actual, expected) or actual in expected:
                 success = True
+        elif 'print_map' in self.test_phrase[0]:
+            actual = self.actual.replace(' ', '').replace('\n', '')
+            expected = self.expected.replace(' ', '').replace('\n', '')
+
+            if not self.testing_stuck:
+                success = compare_strings(actual, expected)
+            else:
+                time_out = 0.5
+                func = timeout(seconds_before_timeout=time_out)(compare_strings)
+                try:
+                    success = func(actual, expected)
+                except:
+                    self.note = 'The test ' + str(self.test_phrase[0]) + ' failed due to a time out of ' + str(
+                        time_out) + ' seconds (-' + str(self.points) + ')'
+
+
+
         elif 'magic' in self.test_phrase[0]:
             actual = re.sub('[^0-9]', '', self.actual)
             expected = re.sub('[^0-9]', '', self.expected)
@@ -366,6 +355,9 @@ class TestPrint(Test):
         #                          'following stream:"' + str(self.expected) + \
         #                          '". Instead printed: "' + str(self.actual) + '"' + ' (-' + str(self.points) + ')\n'
         #         else:
+        # if 'print_map' in self.test_phrase[0]:
+        #     self.note = 'The map printing is not right' + ' (-' + str(self.points) + ')\n'
+        # else:
         self.note = 'On test: ' + str(self.test_phrase) + \
                     ' printing is not right. Should have printed "' + str(self.expected) + \
                     '". Instead printed: "' + str(self.actual) + '"' + ' (-' + str(self.points) + ')\n'
@@ -452,7 +444,7 @@ class TestException(Test):
         try:
             exec(self.test_phrase[0])
         except Exception as e:
-            self.actual = (type(e), e.args[0])
+            self.actual = (type(e), e.args[0] if len(e.args) else '')
 
     def compare(self):
         """Compares if self.actual and self.expected are the same type of exception"""
@@ -462,8 +454,9 @@ class TestException(Test):
                         str(self.expected[0]) + '. Instead returned an output of type: ' + \
                         (str(self.actual[0]) if self.actual else 'None') + ' (-' + str(self.points) + ')'
         elif (self.expected[0] == type(TypeError) and
-              not (compare_strings(self.actual[1], self.expected[1]) or compare_strings(self.actual[1], 'type input invalid')))\
-        or (self.expected[0] == type(TypeError) and not compare_strings(self.actual[1], self.expected[1])):
+              not (compare_strings(self.actual[1], self.expected[1]) or compare_strings(self.actual[1],
+                                                                                        'type input invalid'))) \
+                or (self.expected[0] == type(TypeError) and not compare_strings(self.actual[1], self.expected[1])):
             self.note = "On test: " + str(self.test_phrase) + \
                         " the exception message is not correct. Should have returned the following message: '" + \
                         str(self.expected[1]) + "'. Instead returned: '" + str(self.actual[1]) + "'"
@@ -491,6 +484,7 @@ class TestUpperFile(Test):
     It also checks if the content of the file is a string the same as self.expected.
     Eventually the test deletes the file that was created during the test."""
     bonuses = []
+
     def __init__(self, assignment_num, test_phrase, points, expected, module_name, testing_stuck):
         """In addition to the regular Test init, also initializes the path_to_file field"""
 
@@ -503,7 +497,6 @@ class TestUpperFile(Test):
             self.expected = [TestUpperFile.clear_lines(sol_file)]
         with open(files[1], 'r') as reduced_sol_file:
             self.expected += [TestUpperFile.clear_lines(reduced_sol_file)]
-
 
     @staticmethod
     def clear_lines(file):
@@ -567,7 +560,7 @@ class TestUpperFile(Test):
 
                     if not any([compare_strings(line_to_test, expected_line) for expected_line in self.actual[0]]):
                         note += 'On test ' + str(self.test_phrase) + \
-                                     ": the expected line '" + line_to_print + "' was not found in the output file\n"
+                                ": the expected line '" + line_to_print + "' was not found in the output file\n"
                     else:
                         matching_lines_num += 1
 
@@ -583,9 +576,6 @@ class TestUpperFile(Test):
                 TestUpperFile.bonuses.append(self.curr_id)
                 self.score += 10
                 self.note += '###### MAD RESPECT FOR DOING THE BONUS! (+10) #######\n'
-
-
-
 
         # if os.path.exists(self.path_to_file):
         #     os.remove(self.path_to_file)
@@ -606,6 +596,43 @@ class TestNumpy(Test):
             self.score = self.points
 
 
+class TestClass(Test):
+
+    def __init__(self, assignment_num, test_phrase, points, expected, module_name, testing_stuck):
+        super(TestClass, self).__init__(assignment_num, test_phrase, points, expected, module_name, testing_stuck)
+        self.object_ref = self.test_phrase[0].split('=')[0][:-1]
+
+    def run_test(self):
+        try:
+            exec(self.test_phrase[0])
+        except (ValueError, TypeError, NameError) as e:
+            self.actual = e
+
+    def check_types(self):
+        return 1
+
+    def check_value(self):
+        test_class = eval('self.module.' + self.expected)
+        obj = eval(self.object_ref)
+
+        if isinstance(obj, test_class):
+            self.score = self.points
+
+
+class TestMethod(Test):
+    def run_test(self):
+        try:
+            self.actual = eval(self.test_phrase[0])
+        except (AttributeError, ValueError, TypeError, UnboundLocalError) as e:
+            self.actual = e
+
+    def check_types(self):
+        return 1
+
+    def check_value(self):
+        self.score = self.points
+
+
 TEST_TYPES_DICT = {'PRINT_TEST_TYPE': TestPrint,
                    'LIST_TEST_TYPE': TestList,
                    'ORDERED_LIST_TEST_TYPE': Test,
@@ -617,7 +644,9 @@ TEST_TYPES_DICT = {'PRINT_TEST_TYPE': TestPrint,
                    'EXCEPTION_TEST_TYPE': TestException,
                    'UPPER_FILE_TEST_TYPE': TestUpperFile,
                    'STRING_TEST_TYPE': TestString,
-                   'NUMPY_TEST_TYPE': TestNumpy}
+                   'NUMPY_TEST_TYPE': TestNumpy,
+                   'CLASS_TEST_TYPE': TestClass,
+                   'METHOD_TEST_TYPE': TestMethod}
 
 if __name__ == '__main__':
     print('''1
