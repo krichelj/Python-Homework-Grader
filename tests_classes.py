@@ -8,6 +8,7 @@ import numpy as np
 import time
 from typing import Union
 import itertools
+import codecs, json
 
 from RecursionDetector import test_recursion
 from LoopDetector import uses_loop
@@ -53,7 +54,9 @@ class Test:
         self.assignment_num = assignment_num
         self.test_phrase = test_phrase.split(';')
         self.points = float(points)
-        self.expected = eval(expected) if not (is_backup or isinstance(self, (TestClass, TestMethod))) else expected
+        self.expected = eval(expected) if not (is_backup or isinstance(self, (TestClass, TestMethod)) or
+                                               'black_white_cells' in self.test_phrase[0] or 'image_with_negative' in
+                                               self.test_phrase[0] or 'image_rotate' in self.test_phrase[0]) else expected
         self.time_to_compute_actual = 0
         self.actual = None
         self.score = 0.0
@@ -584,9 +587,22 @@ class TestUpperFile(Test):
 
 
 class TestNumpy(Test):
+    def run_test(self):
+        if 'black_white_cells' in self.test_phrase[0] or 'image_with_negative' in self.test_phrase[0] \
+                or 'image_rotate' in self.test_phrase[0]:
+            from imageio import imread
+            path_to_file = r'assignments/6/submissions/'
+            obj_text = codecs.open(path_to_file + self.expected, 'r', encoding='utf-8').read()
+            b_new = json.loads(obj_text)
+            self.expected = np.array(b_new)
+
+        try:
+            self.actual = eval(self.test_phrase[0])
+        except (ValueError, TypeError, Exception, TimeoutError) as e:
+            self.actual = e
+
     def check_value(self):
         """Checks the valus of self.actual and self.expected as numpy arrays."""
-
         if not np.array_equal(np.around(self.actual), np.around(self.expected)):
             self.note = 'On test: ' + str(self.test_phrase) + \
                         ' the numpy array returned is not as expected. ' + \
